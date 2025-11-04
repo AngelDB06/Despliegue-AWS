@@ -9,11 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Clonar Repositorio
-        uses: actions/checkout@v4
-        
+      - name: Descargar Artefacto de la App
+        uses: actions/download-artifact@v4
+        with:
+          name: static-app-artifact
+          path: ./app
+          run-id: ${{ github.event.inputs.run_id }} 
+          
+      - name: Descargar Artefacto de Documentación
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-artifact
+          path: ./docs
+          run-id: ${{ github.event.inputs.run_id }}
+
       - name: Limpiar Archivos de Prueba antes del Despliegue
-        run: find . -name '*.test.js' -delete
+        run: find ./app -name '*.test.js' -delete
       
       - name: Preparar EC2 y Directorios
         uses: appleboy/ssh-action@v1.0.1 
@@ -28,12 +39,6 @@ jobs:
             sudo mkdir -p /var/www/html/docs
             sudo chown -R ${{ secrets.EC2_USER }}:nginx /var/www/html/
             sudo chmod -R 775 /var/www/html/
-      
-      - name: Instalar dependencias (para generar docs)
-        run: npm install
-        
-      - name: Generar Documentación (JSDoc)
-        run: npm run docs
 
       - name: Copiar App a EC2 (SCP)
         uses: appleboy/scp-action@v0.1.7 
@@ -41,7 +46,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "index.html,styles.css,script"
+          source: "./app/*"
           target: "/var/www/html"
 
       - name: Copiar Documentación a EC2 (SCP)
@@ -50,8 +55,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "./docs"
-          target: "/var/www/html
+          source: "./docs/*"
+          target: "/var/www/html/docs"
 
       - name: Despliegue EC2 Completo
         run: echo "Sitio EC2 desplegado."
