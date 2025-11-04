@@ -12,13 +12,17 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
         
+      # 1. Preparar EC2 y Permisos (Instala Nginx y ajusta directorios)
       - name: Preparar Nginx y Permisos
         uses: appleboy/ssh-action@v1.0.1 
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }} 
-                    
+          # Forzamos el puerto 22 (estándar) y forzamos el formato de clave pública
+          port: 22
+          key_path: /dev/null # A veces ayuda a forzar el uso de 'key'
+          
           script: |
             # Instalar Nginx
             sudo yum install nginx -y || sudo apt update -y && sudo apt install nginx -y
@@ -30,12 +34,14 @@ jobs:
             sudo chown -R ${{ secrets.EC2_USER }}: /var/www/html/
             sudo chmod -R 775 /var/www/html/
 
+      # 2. Copiar App a EC2 (SCP)
       - name: Copiar Archivos Principales a EC2
         uses: appleboy/scp-action@v0.1.7 
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
+          # Copia solo los archivos esenciales de la raíz, excluyendo carpetas ocultas
           source: "index.html,styles.css,script" 
           target: "/var/www/html"
 
