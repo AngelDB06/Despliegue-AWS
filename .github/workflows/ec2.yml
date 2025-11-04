@@ -1,4 +1,4 @@
-name: Despliegue a EC2
+name: Despliegue Manual a EC2
 
 on:
   workflow_dispatch:
@@ -9,22 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Descargar Artefacto de la App
-        uses: actions/download-artifact@v4
+      - name: Clonar Repositorio
+        uses: actions/checkout@v4
+        
+      - name: Configurar Node.js e Instalar dependencias
+        uses: actions/setup-node@v4
         with:
-          name: static-app-artifact
-          path: ./app
-          run-id: ${{ github.event.inputs.run_id }} 
+          node-version: '20'
           
-      - name: Descargar Artefacto de Documentación
-        uses: actions/download-artifact@v4
-        with:
-          name: documentation-artifact
-          path: ./docs
-          run-id: ${{ github.event.inputs.run_id }}
-
+      - name: Instalar dependencias
+        run: npm install
+        
+      - name: Generar Documentación (JSDoc)
+        run: npm run docs
+        
       - name: Limpiar Archivos de Prueba antes del Despliegue
-        run: find ./app -name '*.test.js' -delete
+        run: find . -name '*.test.js' -delete
       
       - name: Preparar EC2 y Directorios
         uses: appleboy/ssh-action@v1.0.1 
@@ -37,6 +37,7 @@ jobs:
             sudo systemctl enable nginx
             sudo systemctl start nginx
             sudo mkdir -p /var/www/html/docs
+            # Otorgar permisos al usuario SSH para que SCP pueda escribir
             sudo chown -R ${{ secrets.EC2_USER }}:nginx /var/www/html/
             sudo chmod -R 775 /var/www/html/
 
@@ -46,7 +47,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "./app/*"
+          source: "index.html,styles.css,script"
           target: "/var/www/html"
 
       - name: Copiar Documentación a EC2 (SCP)
@@ -55,8 +56,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "./docs/*"
-          target: "/var/www/html/docs"
+          source: "./docs"
+          target: "/var/www/html"
 
       - name: Despliegue EC2 Completo
         run: echo "Sitio EC2 desplegado."
