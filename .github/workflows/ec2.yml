@@ -1,12 +1,7 @@
-name: Despliegue Manual a EC2
+name: 💻 4. Despliegue Manual a EC2
 
 on:
   workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: 'SHA del commit para descargar artefactos (opcional)'
-        required: false
-        type: string
 
 jobs:
   deploy:
@@ -19,15 +14,34 @@ jobs:
         with:
           name: static-app-artifact
           path: ./app
+          run-id: ${{ github.event.inputs.run_id }} 
           
       - name: Descargar Artefacto de Documentación
         uses: actions/download-artifact@v4
         with:
           name: documentation-artifact
           path: ./docs
+          run-id: ${{ github.event.inputs.run_id }}
+
+      - name: Preparar EC2 y Directorios
+        uses: appleboy/ssh-action@v1.0.1 
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            # Asegura la instalación y arranque de Nginx (usando yum, no amazon-linux-extras)
+            sudo yum install nginx -y
+            sudo systemctl enable nginx
+            sudo systemctl start nginx
+            
+            # Crea directorios y ajusta permisos
+            sudo mkdir -p /var/www/html/docs
+            sudo chown -R ${{ secrets.EC2_USER }}:nginx /var/www/html/
+            sudo chmod -R 775 /var/www/html/
 
       - name: Copiar App a EC2 (SCP)
-        uses: appleboy/scp-action@v1.0.1
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -35,15 +49,8 @@ jobs:
           source: "./app/*"
           target: "/var/www/html"
 
-      - name: Crear directorio de Docs en EC2 y Copiar (SSH + SCP)
-        run: |
-          ssh -i <(echo "${{ secrets.EC2_KEY }}" | base64 --decode) \
-            -o StrictHostKeyChecking=no \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "mkdir -p /var/www/html/docs"
-          
       - name: Copiar Documentación a EC2 (SCP)
-        uses: appleboy/scp-action@v1.0.1
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
