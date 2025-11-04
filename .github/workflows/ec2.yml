@@ -37,15 +37,10 @@ jobs:
 
       - name: Crear directorio de Docs en EC2 y Copiar (SSH + SCP)
         run: |
-          # 1. Crear directorio remoto si no existe (vía SSH)
           ssh -i <(echo "${{ secrets.EC2_KEY }}" | base64 --decode) \
             -o StrictHostKeyChecking=no \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "mkdir -p /var/www/html/docs"
-            
-          # 2. Copiar Docs (vía SCP)
-          # Nota: Usamos la acción appleboy/scp-action dos veces para simplificar
-          # el manejo de la clave, aunque el paso anterior es más limpio.
           
       - name: Copiar Documentación a EC2 (SCP)
         uses: appleboy/scp-action@v1.0.1

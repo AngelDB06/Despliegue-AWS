@@ -14,15 +14,14 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '20' 
 
       - name: Instalar dependencias
         run: npm install
 
       - name: Generar Documentación (JSDoc)
         run: npm run docs
-
+        
       - name: Subir Artefacto de la App
         uses: actions/upload-artifact@v4
         with:
@@ -30,7 +29,7 @@ jobs:
           path: |
             index.html
             styles.css
-            script/
+            script/ # Incluye la carpeta de archivos JS (script.js y script.test.js)
             package.json
             package-lock.json
 
