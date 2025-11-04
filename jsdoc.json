@@ -1,0 +1,8 @@
+{
+  "source": {
+    "include": ["./script/script.js", "README.md"]
+  },
+  "opts": {
+    "destination": "./docs/"
+  }
+}
