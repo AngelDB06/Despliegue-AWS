@@ -1,4 +1,4 @@
-name: Despliegue Manual a EC2
+name: Despliegue a EC2
 
 on:
   workflow_dispatch:
@@ -7,10 +7,10 @@ jobs:
   ec2:
     runs-on: ubuntu-latest
     steps:
-      - name: 1.Checkout del código
+      - name: Checkout de código
         uses: actions/checkout@v4
 
-      - name: 2. Copiar archivos a isntancia
+      - name: Copiando archivos a la instancia
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -20,7 +20,7 @@ jobs:
           source: "."
           target: "/home/${{ secrets.EC2_USER }}/site"   
 
-      - name: Move files to web dir and restart nginx
+      - name: Mover archivo a la direccion web
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
