@@ -1,4 +1,4 @@
-name: Despliegue Manual a EC2
+name: Despliegue a EC2
 
 on:
   workflow_dispatch:
@@ -33,11 +33,13 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
+            # Instalar y configurar Nginx
             sudo yum install nginx -y
             sudo systemctl enable nginx
             sudo systemctl start nginx
+            
+            # Crear directorios y dar permisos para que SCP pueda escribir
             sudo mkdir -p /var/www/html/docs
-            # Otorgar permisos al usuario SSH para que SCP pueda escribir
             sudo chown -R ${{ secrets.EC2_USER }}:nginx /var/www/html/
             sudo chmod -R 775 /var/www/html/
 
