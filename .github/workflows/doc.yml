@@ -1,0 +1,41 @@
+name: Generar Docs y Empaquetar
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_package:
+    name: Generar Docs y Artefactos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Generar Documentación (JSDoc)
+        run: npm run docs
+
+      - name: Subir Artefacto de la App
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-app-artifact
+          path: |
+            index.html
+            styles.css
+            script/
+            package.json
+            package-lock.json
+
+      - name: Subir Artefacto de Documentación
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-artifact
+          path: ./docs
