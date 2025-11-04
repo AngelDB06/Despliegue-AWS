@@ -1,4 +1,4 @@
-name: 💻 4. Despliegue Manual a EC2
+name: Despliegue Manual a EC2
 
 on:
   workflow_dispatch:
