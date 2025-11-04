@@ -2,11 +2,6 @@ name: Despliegue Manual a EC2
 
 on:
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'ID de la ejecución del workflow de documentación (2_build_docs.yml) a desplegar.'
-        required: true
-        type: string
 
 jobs:
   deploy:
