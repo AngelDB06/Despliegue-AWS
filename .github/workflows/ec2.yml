@@ -1,22 +1,67 @@
-name: Comprobación pruebas unitarias
+name: Despliegue Manual a EC2
 
 on:
   workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID de la ejecución del workflow de documentación (2_build_docs.yml) a desplegar.'
+        required: true
+        type: string
 
 jobs:
-  comprobar_pruebas_unitarias:
+  deploy:
+    name: Desplegar a EC2
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v5
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - name: Descargar Artefacto de la App
+        uses: actions/download-artifact@v4
         with:
-          node-version: '20'
+          name: static-app-artifact
+          path: ./app
+          run-id: ${{ github.event.inputs.run_id }} 
+          
+      - name: Descargar Artefacto de Documentación
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-artifact
+          path: ./docs
+          run-id: ${{ github.event.inputs.run_id }}
 
-      - name: Instalar dependencias
-        run: npm install
+      - name: Limpiar Archivos de Prueba antes del Despliegue
+        run: find ./app -name '*.test.js' -delete
+      
+      - name: Preparar EC2 y Directorios
+        uses: appleboy/ssh-action@v1.0.1 
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo yum install nginx -y
+            sudo systemctl enable nginx
+            sudo systemctl start nginx
+            sudo mkdir -p /var/www/html/docs
+            sudo chown -R ${{ secrets.EC2_USER }}:nginx /var/www/html/
+            sudo chmod -R 775 /var/www/html/
 
-      - name: Ejecutar pruebas unitarias
-        run: npm test
+      - name: Copiar App a EC2 (SCP)
+        uses: appleboy/scp-action@v0.1.7 
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "./app/*"
+          target: "/var/www/html"
+
+      - name: Copiar Documentación a EC2 (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "./docs/*"
+          target: "/var/www/html/docs"
+
+      - name: Despliegue EC2 Completo
+        run: echo "Sitio EC2 desplegado."
