@@ -1,0 +1,13 @@
+{
+  "name": "static-site-aws",
+  "version": "1.0.0",
+  "description": "App estática para AWS",
+  "scripts": {
+    "test": "jest",
+    "docs": "jsdoc -c jsdoc.json"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jsdoc": "^4.0.2"
+  }
+}
