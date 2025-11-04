@@ -2,19 +2,24 @@ name: Despliegue a S3
 
 on:
   workflow_dispatch:
-    inputs:
-      run_id:
-        description: 'ID de la ejecución del workflow de documentación (2_build_docs.yml) a desplegar.'
-        required: true
-        type: string
 
 jobs:
-  deploy:
-    name: Desplegar a S3
+  despliegue-bucket:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Configurar Credenciales de AWS
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Instalar dependencias
+        run: |
+          npm ci
+
+      - name: Configurar credenciales de AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -22,28 +27,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
 
-      - name: Descargar Artefacto de la App
-        uses: actions/download-artifact@v4
-        with:
-          name: static-app-artifact
-          path: ./app
-          run-id: ${{ github.event.inputs.run_id }} 
-          
-      - name: Descargar Artefacto de Documentación
-        uses: actions/download-artifact@v4
-        with:
-          name: documentation-artifact
-          path: ./docs
-          run-id: ${{ github.event.inputs.run_id }}
-
-      - name: Limpiar Archivos de Prueba antes del Despliegue
-        run: find ./app -name '*.test.js' -delete
-
-      - name: Sincronizar App con S3
-        run: aws s3 sync ./app s3://${{ secrets.S3_BUCKET_NAME }} --delete
-
-      - name: Sincronizar Documentación con S3
-        run: aws s3 sync ./docs s3://${{ secrets.S3_BUCKET_NAME }}/docs --delete
-
-      - name: Despliegue S3 Completo
-        run: echo "Sitio S3 desplegado."
+      - name: Subir al bucket
+        run: |
+          echo "Subiendo archivos a S3..."
+          aws s3 sync ./ s3://${{ secrets.S3_BUCKET }}/ --delete 
+     
