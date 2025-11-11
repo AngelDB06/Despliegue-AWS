@@ -1,8 +1,7 @@
 name: Desplegar a EC2
 
 on:
-  push:
-    -main
+
   workflow_dispatch:
 
 jobs:
